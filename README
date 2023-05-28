@@ -1,7 +1,7 @@
 DOCKER VERSIONS
 
-- Docker version: 20.10.5, build 55c4c88
-- Docker Compose version: 1.28.6, build 5db8d86f
+  - Docker version: 20.10.5, build 55c4c88
+  - Docker Compose version: 1.28.6, build 5db8d86f
 
 WHAT THIS APP DOES
 
