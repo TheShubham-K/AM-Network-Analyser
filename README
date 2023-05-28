@@ -1,8 +1,50 @@
-	Docker version: 20.10.5, build 55c4c88
-	Docker Compose version: 1.28.6, build 5db8d86f
-	I basically started this project by doing some research as I didn't have a lot of experience with Docker apart from one brief lab at university.
-	I then started using tcpdump to get a feel for the message layout, then chose a scripting language(I ended up using Python as I feel as it is perfect for what I need in this project - manipulating data)
-	At first sight, I wanted to store the contents of the tcpdump into a file but then I quickly realized that it was a horrible idea(for one, I did not know when / if the producer would stop curl-ing pages, and even if I did, I might have ended with a giant file which would be extremely inefficient). 
-	So, my approach is to create a python subprocess(tcpdump port 80 -nn, nn because otherwise it would show hostname instead of the actual IPV4 address), then process the lines as they come from the subprocess. Regarding the actual extraction of the addresses & ports, I make use of the fact that all messages have the same layout and use a series of finds on the line in order to create some bounds where the addresses are located. A more elegant would have been a regex, but unfortunately I am not extremely confortable with them at this time.
-	The first Docker container contains the shell script & the python one + the required dependencies(e.g. tcpdump). Starting the container will run the producer script, while the python script will run in the background.
+DOCKER VERSIONS
+	- Docker version: 20.10.5, build 55c4c88
+	- Docker Compose version: 1.28.6, build 5db8d86f
 
+STEP BY STEP TESTING GUIDE
+	- From the root folder of the project, run docker-compose build, then docker-compose up(it will take a bit until the db is ready to accept connections)
+	- Should you wish to check the MySQL database, run the mysql_terminal.sh with the password password which will set up a root connection to the db(you might have to give it execute rights)
+	- Once logged in, write the commands USE network_data; then SELECT * FROM traffic; which should show the table data
+	- Should you wish to check the exported data manually, you can access the exporter at localhost:9104
+	- The Prometheus front-end can be accessed at localhost:9090 where you can graph different values from the exporter(e.g. mysql_global_status_commands_total{command="insert"})
+	
+PYTHON PARSER
+	- My approach is to create a python subprocess(tcpdump port 80 -nn), then process the lines as they come from the subprocess. Regarding the actual extraction of the addresses & ports, I make use of the fact that all messages have the same layout and use a series of finds on the line in order to create isolate where the addresses are located. A more elegant solution would have been a regex, but this should do for a smaller project like this one.
+	- I chose python as its ease of use made it perfect for a project like this
+
+FOLDER LAYOUT
+app
+	- contains resources necessary for the first container(Dockerfile for building the image, the several scripts, the sources)
+
+db
+	- contains an init.sql file that will be create a new database & table when the database container is up and running
+	
+prometheus
+	- contains the .yml configuration file for the Prometheus scraper
+
+DOCKER COMPOSE CONTAINERS LAYOUT
+	- The app consists of 4 containers put together with Docker Compose:
+	
+am-analyzer (created from the am-network-analyzer custom image)
+	- The image is derived from the python one(which itself is based on Debian IIRC), on top of which I added tcpdump and mysql-connector-python
+	- Contains the producer shell script along with the sources and the python parser
+	- It also contains a shell script which runs the python parser in the foreground and the producer script in the background
+	- Has several environment variables set that deal with the MySQL connection
+	- On startup, the container will exit with an error and restart itself several times until the database is ready to accept connections
+	
+am-db (created from the mysql image)
+	- Contains the MySQL database and has a db named network_data with a table named traffic with the following layout: 
+		time_recorded(DATETIME) ip_address(destination ip, VARCHAR) port(the port on the host machine from where the request to the HTTP port was sent, INT)
+	- I provided a shell script for easily launching a terminal with a root connection to the database(mysql_terminal.sh)(password: password - security 101 right there)
+	- Exposes port 3306
+	
+am-db-exporter (created from the prom/mysqld-exporter image)
+	- Contains the Prometheus MySQL exporter which connects to the database and exposes port 9104
+	- Has an environment variable set for the connection to the database
+	- Can be accessed from localhost:9104 should you wish to check the exported data manually
+	
+am-prometheus (created from the prom/prometheus image)
+	- Contains the Prometheus scraper and exposes port 9090
+	- By default, it scrapes every 5s(can be modified in the config file from the prometheus folder)
+	- Can be accessed from localhost:9090
