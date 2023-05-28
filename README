@@ -1,15 +1,15 @@
-DOCKER VERSIONS
+## DOCKER VERSIONS
 
-  - Docker version: 20.10.5, build 55c4c88
-  - Docker Compose version: 1.28.6, build 5db8d86f
+- Docker version: 20.10.5, build 55c4c88
+- Docker Compose version: 1.28.6, build 5db8d86f
 
-WHAT THIS APP DOES
+## WHAT THIS APP DOES
 
 - It basically generates some HTTP/S traffic, analyzes it, inserts relevant data(Outgoing port + destination IP) into a MySQL database.
 - The data is then exported through a MySQL exporter into a Prometheus scraper which offers relevant metrics(e.g. inserts)
 - There is also a Grafana dashboard which is not yet properly configured.
 
-STEP BY STEP TESTING GUIDE
+## STEP BY STEP TESTING GUIDE
 
 - From the root folder of the project, `run docker-compose build`, then `docker-compose up`(it will take a bit until the db is ready to accept connections)
 - Should you wish to check the MySQL database, run the mysql_terminal.sh script with the password password which will set up a root connection to the db(you might have to give it execute rights)
@@ -19,12 +19,12 @@ STEP BY STEP TESTING GUIDE
 - By default, the program listens on ports 80 and 443(HTTP & HTTPS), but you can add more by editing the docker-compose file(am-analyzer service, PORTS environment variable)
 - I added some HTTPS sources to test the multi-port parsing, but I removed them before sending the archive so that it works as you intended
 
-PYTHON PARSER
+## PYTHON PARSER
 
 - My approach is to create a python subprocess(tcpdump port 80 -nn), then process the lines as they come from the subprocess. Regarding the actual extraction of the addresses & ports, I make use of the fact that all messages have the same layout and use a series of finds on the line in order to create isolate where the addresses are located. A more elegant solution would have been a regex, but this should do for a smaller project like this one.
 - I chose python as its ease of use made it perfect for a project like this
 
-FOLDER LAYOUT
+## FOLDER LAYOUT
 app
 
 - contains resources necessary for the first container(Dockerfile for building the image, the several scripts, the sources)
@@ -37,7 +37,7 @@ prometheus
 
 - contains the .yml configuration file for the Prometheus scraper
 
-DOCKER COMPOSE CONTAINERS LAYOUT
+## DOCKER COMPOSE CONTAINERS LAYOUT
 
 - The app consists of 4 containers put together with Docker Compose:
 
