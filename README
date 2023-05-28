@@ -5,6 +5,7 @@ DOCKER VERSIONS
 WHAT THIS APP DOES
 	- It basically generates some HTTP/S traffic, analyzes it, inserts relevant data(Outgoing port + destination IP) into a MySQL database.
 	- The data is then exported through a MySQL exporter into a Prometheus scraper which offers relevant metrics(e.g. inserts)
+	- There is also a Grafana dashboard which is not yet properly configured.
 
 STEP BY STEP TESTING GUIDE
 	- From the root folder of the project, run docker-compose build, then docker-compose up(it will take a bit until the db is ready to accept connections)
