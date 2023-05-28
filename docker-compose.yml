@@ -12,6 +12,8 @@ services:
       - "USER=root"
       - "PASSWORD=password"
       - "DB=network_data"
+      # Ports to parse on (To add more, add a space between each port)
+      - "PORTS=80 443"
 
     # Mount volume 
     volumes:

@@ -4,10 +4,12 @@ DOCKER VERSIONS
 
 STEP BY STEP TESTING GUIDE
 	- From the root folder of the project, run docker-compose build, then docker-compose up(it will take a bit until the db is ready to accept connections)
-	- Should you wish to check the MySQL database, run the mysql_terminal.sh with the password password which will set up a root connection to the db(you might have to give it execute rights)
+	- Should you wish to check the MySQL database, run the mysql_terminal.sh script with the password password which will set up a root connection to the db(you might have to give it execute rights)
 	- Once logged in, write the commands USE network_data; then SELECT * FROM traffic; which should show the table data
 	- Should you wish to check the exported data manually, you can access the exporter at localhost:9104
 	- The Prometheus front-end can be accessed at localhost:9090 where you can graph different values from the exporter(e.g. mysql_global_status_commands_total{command="insert"})
+	- By default, the program listens on ports 80 and 443(HTTP & HTTPS), but you can add more by editing the docker-compose file(am-analyzer service, PORTS environment variable)
+	- I added some HTTPS sources to test the multi-port parsing, but I removed them before sending the archive so that it works as you intended
 	
 PYTHON PARSER
 	- My approach is to create a python subprocess(tcpdump port 80 -nn), then process the lines as they come from the subprocess. Regarding the actual extraction of the addresses & ports, I make use of the fact that all messages have the same layout and use a series of finds on the line in order to create isolate where the addresses are located. A more elegant solution would have been a regex, but this should do for a smaller project like this one.
@@ -48,3 +50,8 @@ am-prometheus (created from the prom/prometheus image)
 	- Contains the Prometheus scraper and exposes port 9090
 	- By default, it scrapes every 5s(can be modified in the config file from the prometheus folder)
 	- Can be accessed from localhost:9090
+	
+FINAL THOUGHTS
+	- I really enjoyed the project as it gave me the push to finally learn Docker and I now see why it is so popular and such a big deal. Might even start looking into Kubernetes when I have some free time now that I'm at it :). 
+	- Regardless of whether you think that the quality of my work deserves passing through to the next step, I would love some feedback on it so that I know if I'm headed in the right direction
+	- Sorry if the README was too long, I like explaining the things I worked on, it helps refine my thought process and I figured a README would be the perfect place to do it

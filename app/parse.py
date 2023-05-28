@@ -5,12 +5,11 @@ import mysql.connector
 import os
 
 # Process the rows as they come from the tcpdump subprocess
-# Parameters : the subprocess and the connection to the database to add the data to
-def processRows(subprocess, database):
+# Parameters : the subprocess, the ports on which to parse on and the connection to the database to add the data to
+def processRows(subprocess, ports, database):
     for row in iter(subprocess.stdout.readline, ''):
         # Convert the row to a string
         rowAsStr = str(row.rstrip().decode("utf-8"))
-
         # TO DO : ADD SUPPORT FOR IPV6
         if (rowAsStr.find("IP6") != -1):
             continue
@@ -29,19 +28,25 @@ def processRows(subprocess, database):
         IP1 = ".".join(spl[0:4])
         port1 = spl[4]
 
-        # Only take the requests to(not from) port 80 into account
-        if (port1 == "80"):
+        # Only take the requests to(not from) the specified ports into account
+        shouldSkip = False
+        for port in ports: 
+            if (port1 == port):
+                shouldSkip = True
+                break
+        if (shouldSkip):
             continue
-        
+
         # Split the destination IP address
         ipIndex2UpperBound = rowAsStr.index("Flags") - 2
         IP2WithPort = rowAsStr[ipIndex2LowerBound + 2 : ipIndex2UpperBound]
         spl = IP2WithPort.split(".")
         IP2 = ".".join(spl[0:4])
+
         # Insert the values into the MySQL database
         myCursor = database.cursor()
         sql = "insert into traffic(time_recorded, ip_address, port) VALUES(%s, %s, %s)"
-        val = ((str(time))[:19], IP2, port1)
+        val = (timeStr[:19], IP2, port1)
         myCursor.execute(sql, val)
         database.commit()
 
@@ -54,9 +59,18 @@ def main():
         password=os.environ.get("PASSWORD"),
         database=os.environ.get("DB")
     )
+    
+    # Set the ports on which we will parse
+    portCmd = os.environ.get("PORTS")
+    ports = portCmd.split(" ")
+    # Join the ports with port %port or
+    portStr = " ".join("port %s or" %port for port in ports)
+    # Remove the last or
+    portStr = portStr[:len(portStr) - 2]
+
     # Start the tcpdump subprocess & process its output
-    p = sub.Popen(('tcpdump', 'port 80', '-nn', '-tttt', '-l'), stdout = sub.PIPE)
-    processRows(p, mydb)
+    p = sub.Popen(('tcpdump', portStr, '-nn', '-tttt', '-l'), stdout = sub.PIPE)
+    processRows(p, ports, mydb)
 
 if (__name__ == "__main__"):
     main()
