@@ -1,0 +1,81 @@
+version: '3'
+services:
+  # Parser & Traffic Generator
+  am-analyzer:
+    
+    # Build the image with the provided Dockerfile
+    build: ./app
+
+    # Environment variables
+    environment:
+      - "HOST=am-db"
+      - "USER=root"
+      - "PASSWORD=password"
+      - "DB=network_data"
+
+    # Mount volume 
+    volumes:
+      - "./app/:/usr/src/app" # Map the app folder on the host to the the app folder on the container
+
+    # Restart until the database is ready to accept connections
+    restart: always
+
+    container_name: am-analyzer
+
+  # MySQL Database
+  am-db:
+
+    # Fetch this image from the Docker Hub
+    image: mysql
+
+    # Environment variables
+    environment:
+      - "MYSQL_ROOT_PASSWORD=password"
+
+    ports:
+      - "3306:3306"
+
+    # Helps fix mbind: Operation not permitted error
+    cap_add:
+      - SYS_NICE 
+    
+    # Run the init.sql as soon as the container is running
+    # (Everything in the docker-entrypoint-initdb.d is run on container start-up) 
+    volumes:
+      - "./db/init.sql:/docker-entrypoint-initdb.d/init.sql"
+
+    container_name: am-db
+  
+  # Prometheus MySQL exporter
+  am-db-exporter:
+
+    # Fetch this image from the Docker Hub
+    image: prom/mysqld-exporter
+
+    # Environment variables
+    environment:
+      - DATA_SOURCE_NAME=root:password@(am-db:3306)/network_data
+    
+    # Map the ports
+    ports:
+      - "9104:9104"
+
+    container_name: am-db-exporter
+
+  # Prometheus Scraper
+  am-prometheus:
+
+    # Fetch this image from the Docker Hub
+    image: prom/prometheus
+    
+    # Prometheus configuration file
+    volumes:
+      - "./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml"
+    
+    # Map the ports
+    ports:
+      - "9090:9090"
+
+    container_name: am-prometheus
+
+    

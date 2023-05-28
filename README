@@ -1,4 +1,6 @@
-	I basically started by doing some research as I didn't have a lot of experience with Docker apart from a few labs at university.
+	Docker version: 20.10.5, build 55c4c88
+	Docker Compose version: 1.28.6, build 5db8d86f
+	I basically started this project by doing some research as I didn't have a lot of experience with Docker apart from one brief lab at university.
 	I then started using tcpdump to get a feel for the message layout, then chose a scripting language(I ended up using Python as I feel as it is perfect for what I need in this project - manipulating data)
 	At first sight, I wanted to store the contents of the tcpdump into a file but then I quickly realized that it was a horrible idea(for one, I did not know when / if the producer would stop curl-ing pages, and even if I did, I might have ended with a giant file which would be extremely inefficient). 
 	So, my approach is to create a python subprocess(tcpdump port 80 -nn, nn because otherwise it would show hostname instead of the actual IPV4 address), then process the lines as they come from the subprocess. Regarding the actual extraction of the addresses & ports, I make use of the fact that all messages have the same layout and use a series of finds on the line in order to create some bounds where the addresses are located. A more elegant would have been a regex, but unfortunately I am not extremely confortable with them at this time.
